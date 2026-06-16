@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
 import { v4 as uuid } from "uuid";
 
 export async function POST(request: Request) {
@@ -24,19 +22,29 @@ export async function POST(request: Request) {
 
     const slug = name.toLowerCase().replace(/\s+/g, "-");
 
-    // Ensure uploads directory exists
-    const uploadsDir = join(process.cwd(), "public", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
-
-    // Save each image file and collect paths
+    // Upload to Cloudinary
     const imagePaths: string[] = [];
     for (const image of validImages) {
       const bytes = await image.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const filename = `${uuid()}-${image.name.replace(/\s+/g, "_")}`;
-      const filePath = join(uploadsDir, filename);
-      await writeFile(filePath, buffer);
-      imagePaths.push(`/uploads/${filename}`);
+      const cloudinaryFormData = new FormData();
+      cloudinaryFormData.append('file', new Blob([bytes], { type: image.type }));
+      cloudinaryFormData.append(
+        'upload_preset',
+        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
+      );
+
+      const cloudinaryResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        {
+          method: 'POST',
+          body: cloudinaryFormData,
+        }
+      );
+
+      const cloudinaryData = await cloudinaryResponse.json();
+      if (cloudinaryData.secure_url) {
+        imagePaths.push(cloudinaryData.secure_url);
+      }
     }
 
     // Insert product
@@ -52,10 +60,10 @@ export async function POST(request: Request) {
     const productId = result.insertId;
 
     // Insert each image into product_images
-    for (const imgPath of imagePaths) {
+    for (const imgUrl of imagePaths) {
       await pool.query(
         `INSERT INTO product_images (product_id, image_url) VALUES (?, ?)`,
-        [productId, imgPath]
+        [productId, imgUrl]
       );
     }
 
