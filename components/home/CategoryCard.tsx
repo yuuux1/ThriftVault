@@ -1,5 +1,3 @@
-import { Analytics } from "@vercel/analytics/next"
-
 type CategoryCardProps = {
   name: string;
   icon: React.ElementType;
