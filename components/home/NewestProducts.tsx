@@ -8,6 +8,7 @@ interface Product {
   name: string;
   price: number;
   image_url: string | null;
+  is_sold: number;
 }
 
 type NewestProductsProps = {
@@ -92,6 +93,7 @@ export default function NewestProducts({
               name={product.name}
               price={Number(product.price)}
               image_url={product.image_url}
+              isSold={product.is_sold === 1}
             />
           ))}
         </div>

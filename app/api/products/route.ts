@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
         p.name,
         p.price,
         p.category_id,
+        p.is_sold,
         MIN(pi.image_url) AS image_url
       FROM products p
       LEFT JOIN product_images pi
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     query += `
-      GROUP BY p.id, p.name, p.price, p.category_id, p.created_at
+      GROUP BY p.id, p.name, p.price, p.category_id, p.is_sold, p.created_at
       ORDER BY p.created_at DESC
     `;
 

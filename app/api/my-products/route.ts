@@ -19,12 +19,13 @@ export async function GET(
           p.id,
           p.name,
           p.price,
+          p.is_sold,
           MIN(pi.image_url) AS image_url
         FROM products p
         LEFT JOIN product_images pi
           ON p.id = pi.product_id
         WHERE p.seller_id = ?
-        GROUP BY p.id, p.name, p.price
+        GROUP BY p.id, p.name, p.price, p.is_sold
         ORDER BY p.id DESC
         `,
         [sellerId]
